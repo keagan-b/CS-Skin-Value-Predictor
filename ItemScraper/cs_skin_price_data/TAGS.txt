@@ -1,0 +1,7 @@
+// {info.todo}: remove tags which do not apply to dataset.
+content.data-type.image # Contains image data.
+content.language.en # Contains text in language English / en.
+content.subject.computer-science # Relates to computer science.
+content.subject.internet # Relates to internet.
+ml.task.image-classification # Relates to Image Classification, a machine learning task.
+ml.task.parsing # Relates to Parsing, a machine learning task.

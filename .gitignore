@@ -1,0 +1,6 @@
+*/venv/*
+*/.idea/*
+ItemScraper/ExportedTextures/
+ItemScraper/temp/
+ItemScraper/TGAs/
+*/__pycache__/
