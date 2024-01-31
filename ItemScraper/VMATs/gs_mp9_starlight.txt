@@ -1,0 +1,52 @@
+{
+    "Layer0": {
+        "shader": "csgo_customweapon.vfx",
+        "f_override_normal": "1",
+        "f_paint_style": "8",
+        "g_bignoreweaponsizescale": "1",
+        "g_bpearlescentonmetalliconly": "0",
+        "g_ncoloradjustmentmode": "0",
+        "g_npatterntexturehorizontalsampling": "0",
+        "g_npatterntextureverticalsampling": "0",
+        "g_flcolorbrightness": "1.6",
+        "g_flgrungetexcoordrotation": "0",
+        "g_flgrungetexcoordscale": "1",
+        "g_flpaintroughness": "0.45",
+        "g_flpatterntexcoordrotation": "0",
+        "g_flpatterntexcoordscale": "1",
+        "g_flpearlescentscale": "0",
+        "g_fluvscale1": "1",
+        "g_flweaponlength1": "32",
+        "g_flwearamount": "0",
+        "g_flweartexcoordrotation": "0",
+        "g_flweartexcoordscale": "1",
+        "g_vcolor0": "[0.819608 0.819608 0.819608 1.000000]",
+        "g_vcolor1": "[0.874510 0.874510 0.874510 1.000000]",
+        "g_vcolor2": "[0.921569 0.870588 0.815686 1.000000]",
+        "g_vcolor3": "[0.886275 0.592157 0.168627 1.000000]",
+        "g_vgrungetexcoordoffset": "[0.000000 0.000000 0.000000 0.000000]",
+        "g_vpatterntexcoordoffset": "[0.000000 0.000000 0.000000 0.000000]",
+        "g_vweartexcoordoffset": "[0.000000 0.000000 0.000000 0.000000]",
+        "textureambientocclusion": "materials/default/default_paintao.tga",
+        "texturecolor": "materials/default/default_weapon_color.tga",
+        "texturegrunge": "materials/models/weapons/customization/shared/gun_grunge.png",
+        "texturemasks": "materials/default/default_paintmask.tga",
+        "texturemetalness": "materials/default/default_rough.tga",
+        "texturenormal": "materials/models/weapons/customization/paints/gunsmith/workshop/mp9_starlight_normal.png",
+        "texturepattern": "materials/models/weapons/customization/paints/gunsmith/workshop/mp9_starlight.png",
+        "texturewear": "materials/models/weapons/customization/shared/paint_wear.png",
+        "compiled textures": {
+            "g_tambientocclusion": "materials/default/default_paintao_tga_9627e701.vtex",
+            "g_tcolor": "materials/default/default_weapon_color_tga_a59dc9c7.vtex",
+            "g_tgrunge": "materials/models/weapons/customization/shared/gun_grunge_psd_f3419fed.vtex",
+            "g_tmasks": "materials/default/default_paintmask_tga_971c9ff1.vtex",
+            "g_tmetalness": "materials/default/default_rough_tga_8aa56190.vtex",
+            "g_tnormal": "materials/models/weapons/customization/paints/gunsmith/workshop/mp9_starlight_normal_tga_16eaa01d.vtex",
+            "g_tpattern": "materials/models/weapons/customization/paints/gunsmith/workshop/mp9_starlight_tga_bc132034.vtex",
+            "g_twear": "materials/models/weapons/customization/shared/paint_wear_psd_a2abffd8.vtex"
+        },
+        "attributes": {
+            "layer_name_1": "default_composite_inputs.vmat"
+        }
+    }
+}

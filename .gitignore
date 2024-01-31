@@ -1,6 +1,7 @@
 */venv/*
 */.idea/*
-ItemScraper/ExportedTextures/
+ItemScraper/Textures/
 ItemScraper/temp/
 ItemScraper/TGAs/
 */__pycache__/
+/CSUnpacked/*

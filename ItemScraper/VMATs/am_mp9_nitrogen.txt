@@ -1,0 +1,48 @@
+{
+    "Layer0": {
+        "shader": "csgo_customweapon.vfx",
+        "f_paint_style": "4",
+        "g_bignoreweaponsizescale": "1",
+        "g_npatterntexturehorizontalsampling": "0",
+        "g_npatterntextureverticalsampling": "0",
+        "g_flcolorbrightness": "1",
+        "g_flgrungetexcoordrotation": "0",
+        "g_flgrungetexcoordscale": "1",
+        "g_flpaintroughness": "0.1",
+        "g_flpatterntexcoordrotation": "0",
+        "g_flpatterntexcoordscale": "2.5",
+        "g_flpearlescentscale": "0",
+        "g_fluvscale1": "0.485",
+        "g_flweaponlength1": "22.126",
+        "g_flwearamount": "0",
+        "g_flweartexcoordrotation": "0",
+        "g_flweartexcoordscale": "1",
+        "g_vcolor0": "[0.290196 0.290196 0.290196 1.000000]",
+        "g_vcolor1": "[1.000000 0.454902 0.254902 1.000000]",
+        "g_vcolor2": "[0.372549 0.298039 0.325490 1.000000]",
+        "g_vcolor3": "[0.552941 0.286275 0.501961 1.000000]",
+        "g_vgrungetexcoordoffset": "[0.000000 0.000000 0.000000 0.000000]",
+        "g_vpatterntexcoordoffset": "[0.000000 0.000000 0.000000 0.000000]",
+        "g_vweartexcoordoffset": "[0.000000 0.000000 0.000000 0.000000]",
+        "textureambientocclusion": "materials/models/weapons/customization/smg_mp9/smg_mp9_ao.png",
+        "texturecolor": "materials/models/weapons/v_models/smg_mp9/smg_mp9_color.png",
+        "texturegrunge": "materials/models/weapons/customization/shared/gun_grunge.png",
+        "texturemasks": "materials/models/weapons/customization/smg_mp9/smg_mp9_masks.png",
+        "texturemetalness": "materials/models/weapons/v_models/smg_mp9/smg_mp9_rough.png",
+        "texturepattern": "materials/models/weapons/customization/paints/anodized_multi/workshop/nitrogen_pattern.png",
+        "texturewear": "materials/models/weapons/customization/shared/paint_wear.png",
+        "compiled textures": {
+            "g_tambientocclusion": "materials/models/weapons/customization/smg_mp9/smg_mp9_ao_psd_6de68ade.vtex",
+            "g_tcolor": "materials/models/weapons/v_models/smg_mp9/smg_mp9_color_psd_7c84459f.vtex",
+            "g_tgrunge": "materials/models/weapons/customization/shared/gun_grunge_psd_f3419fed.vtex",
+            "g_tmasks": "materials/models/weapons/customization/smg_mp9/smg_mp9_masks_psd_c1e92ba6.vtex",
+            "g_tmetalness": "materials/models/weapons/v_models/smg_mp9/smg_mp9_rough_psd_18ebb9e.vtex",
+            "g_tpattern": "materials/models/weapons/customization/paints/anodized_multi/workshop/nitrogen_pattern_tga_17151069.vtex",
+            "g_twear": "materials/models/weapons/customization/shared/paint_wear_psd_a2abffd8.vtex"
+        },
+        "attributes": {
+            "layer_name_1": "smg_mp9_composite_inputs.vmat",
+            "previewmodel": "models/weapons/v_smg_mp9.vmdl"
+        }
+    }
+}

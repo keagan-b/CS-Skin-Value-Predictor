@@ -1,0 +1,47 @@
+{
+    "Layer0": {
+        "shader": "csgo_customweapon.vfx",
+        "f_paint_style": "4",
+        "g_bignoreweaponsizescale": "1",
+        "g_npatterntexturehorizontalsampling": "0",
+        "g_npatterntextureverticalsampling": "0",
+        "g_flcolorbrightness": "1",
+        "g_flgrungetexcoordrotation": "0",
+        "g_flgrungetexcoordscale": "1",
+        "g_flpaintroughness": "0.24",
+        "g_flpatterntexcoordrotation": "170",
+        "g_flpatterntexcoordscale": "1.6",
+        "g_flpearlescentscale": "0.2",
+        "g_fluvscale1": "1",
+        "g_flweaponlength1": "32",
+        "g_flwearamount": "0",
+        "g_flweartexcoordrotation": "0",
+        "g_flweartexcoordscale": "1",
+        "g_vcolor0": "[0.203922 0.192157 0.192157 1.000000]",
+        "g_vcolor1": "[0.941177 0.756863 0.164706 1.000000]",
+        "g_vcolor2": "[0.858824 0.262745 0.207843 1.000000]",
+        "g_vcolor3": "[0.203922 0.403922 0.835294 1.000000]",
+        "g_vgrungetexcoordoffset": "[0.000000 0.000000 0.000000 0.000000]",
+        "g_vpatterntexcoordoffset": "[0.000000 -0.700000 0.000000 0.000000]",
+        "g_vweartexcoordoffset": "[0.000000 0.000000 0.000000 0.000000]",
+        "textureambientocclusion": "materials/default/default_paintao.tga",
+        "texturecolor": "materials/default/default_weapon_color.tga",
+        "texturegrunge": "materials/models/weapons/customization/shared/gun_grunge.png",
+        "texturemasks": "materials/default/default_paintmask.tga",
+        "texturemetalness": "materials/default/default_rough.tga",
+        "texturepattern": "materials/models/weapons/customization/paints/anodized_multi/smoke2.png",
+        "texturewear": "materials/models/weapons/customization/shared/paint_wear.png",
+        "compiled textures": {
+            "g_tambientocclusion": "materials/default/default_paintao_tga_9627e701.vtex",
+            "g_tcolor": "materials/default/default_weapon_color_tga_a59dc9c7.vtex",
+            "g_tgrunge": "materials/models/weapons/customization/shared/gun_grunge_psd_f3419fed.vtex",
+            "g_tmasks": "materials/default/default_paintmask_tga_971c9ff1.vtex",
+            "g_tmetalness": "materials/default/default_rough_tga_8aa56190.vtex",
+            "g_tpattern": "materials/models/weapons/customization/paints/anodized_multi/smoke2_psd_13f12230.vtex",
+            "g_twear": "materials/models/weapons/customization/shared/paint_wear_psd_a2abffd8.vtex"
+        },
+        "attributes": {
+            "layer_name_1": "default_composite_inputs.vmat"
+        }
+    }
+}

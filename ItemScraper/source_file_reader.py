@@ -13,6 +13,7 @@ Reads Source data files into a dictionary
 import os
 import re
 import json
+import sqlite3
 import subprocess
 
 
@@ -26,13 +27,11 @@ def gather_data(input_path: str, output_path: str, skip: int = 0) -> dict:
     """
 
     # check if the output file exists
-    if os.path.exists(output_path):
+    if os.path.exists(output_path) and output_path is not None:
         # open file & gather data
         with open(output_path, "r") as f:
             file_json = json.load(f)
             f.close()
-
-        print("\t > Loaded from preexisting file.")
 
         # return data
         return file_json
@@ -122,13 +121,65 @@ def gather_data(input_path: str, output_path: str, skip: int = 0) -> dict:
                 else:  # add key/value pair to current dictionary level
                     current_level[groups[0].lower()] = groups[1]
 
-        # return completed dictionary
-        with open(output_path, "w") as f:
-            json.dump(data, f, indent=4)
-            f.close()
+        # save completed dictionary
+        if output_path is not None:
+            with open(output_path, "w") as f:
+                json.dump(data, f, indent=4)
+                f.close()
 
-        print("\t > Loaded from input file.")
+        # return completed dictionary
         return data
+
+
+def decompile_vmats(db:sqlite3.Connection, vmat_dir: str) -> None:
+    """
+    Uses the ValveResourceFormat decompiler to extract a list of VMAT files and match them
+    to their corresponding data names.
+
+    :param db: database object
+    :param vmat_dir: directory with vmats to parse
+    :return: dict object with the keyname of the internal skin and the value of the parsed JSON data
+    """
+
+    # make VMATs dir
+    if not os.path.exists("./VMATs"):
+        os.mkdir("./VMATs")
+
+    # gather all files in VMAT directory
+    for file in os.listdir(vmat_dir):
+        # skip the missing_paintkit file
+        if "missing_paintkit" in file:
+            continue
+
+        # get file name
+        file_name = file.split(".")[0]
+
+        if file.endswith(".vmat_c") and not os.path.exists(f"./VMATs/{file_name}.txt"):
+
+            # create command for decompiler CLI
+            command = ["./TextureDecompiler/Decompiler.exe", "-i", os.path.join(vmat_dir, file),
+                       "-o", "./VMATs/temp.txt"]
+
+            # run decompile command
+            subprocess.run(command, stdout=open(os.devnull, "wb"), stderr=open(os.devnull, "wb"))
+
+            # process the extracted data and save it
+            data = gather_data("./VMATs/temp.txt", f"./VMATs/{file_name}.txt")
+
+            # open cursor
+            cursor = db.cursor()
+            cursor.execute("""
+            INSERT INTO skins 
+            (skin_data_name, skin_vmat_data)
+            VALUES (?,?);
+            """, (file_name, json.dumps(data)))
+            cursor.close()
+
+            db.commit()
+
+    # remove temp file
+    if os.path.exists("./VMATs/temp.txt"):
+        os.remove("./VMATs/temp.txt")
 
 
 def decompile_textures() -> None:
@@ -147,10 +198,10 @@ def decompile_textures() -> None:
                 output_name = file.split(".")[0] + ".png"
 
                 # ensure file hasn't been decompiled
-                if not os.path.exists(f"./ExportedTextures/{output_name}"):
+                if not os.path.exists(f"./Textures/{output_name}"):
                     # create command for the CLI
                     command = ["./TextureDecompiler/Decompiler.exe", "-i", os.path.join(root, file), "-o",
-                               f"./ExportedTextures/{output_name}"]
+                               f"D:/APResearchProject/CS-Skin-Value-Predictor/ItemScraper/Textures/{output_name}"]
 
                     # silently run command
                     subprocess.run(command, stdout=open(os.devnull, "wb"))

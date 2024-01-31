@@ -12,10 +12,11 @@ Uses data gathered from the source file reader to compile a list of skin names a
 """
 
 import os
+import json
 import shutil
 import sqlite3
 
-from weapon_classifier import classify_weapon
+from weapon_classifiers import get_weapon, get_rarity, WeaponToInt
 
 
 def build_db(file_path: str, should_wipe: bool = False) -> sqlite3.Connection:
@@ -46,13 +47,36 @@ def build_db(file_path: str, should_wipe: bool = False) -> sqlite3.Connection:
         cursor.execute("""
         CREATE TABLE skins (
             skin_data_name TEXT PRIMARY KEY,
-            skin_tag_name TEXT NOT NULL,
-            skin_weapon_type TEXT NOT NULL,
+            skin_tag_name TEXT,
+            skin_weapon_type TEXT,
             skin_texture_file TEXT,
             skin_rarity INTEGER,
+            skin_vmat_data TEXT DEFAULT "{}",
             skin_price_data TEXT DEFAULT "{}"
         );
         """)
+
+        # re-add all VMATs to the DB
+        for file in os.listdir("./VMATs"):
+
+            # skip the missing_paintkit file
+            if "missing_paintkit" in file:
+                continue
+
+            # get data_name from file name
+            data_name = file.split(".")[0]
+
+            # get file content
+            with open(os.path.join("./VMATs", file), "r") as f:
+                vmat_data = f.read()
+                f.close()
+
+            # add data to db
+            cursor.execute("""
+            INSERT INTO skins 
+            (skin_data_name, skin_vmat_data)
+            VALUES (?,?);
+            """, (data_name, vmat_data))
 
         # close cursor
         cursor.close()
@@ -66,23 +90,40 @@ def build_db(file_path: str, should_wipe: bool = False) -> sqlite3.Connection:
         return sqlite3.connect(file_path)
 
 
-def match_textures(items_json: dict, translations_json: dict, texture_folder: str, db: sqlite3.Connection) -> None:
+def get_skin_data(items_json: dict, translations_json: dict, texture_folder: str, db: sqlite3.Connection) -> None:
     """
-    Digs through the translation and item JSON to find and match textures to skins.
+    Gathers texture data, tag names, rarities, and weapon types for all skins and adds it to the DB
+
     :param items_json: Dictionary object containing the contents of items_game
     :param translations_json: Dictionary object containing the contents of csgo_english
     :param texture_folder: The root folder where extracted textures are
     :param db: Database object to work on
     :return:
     """
+    # item_sets
 
-    # collect all texture files
-    files = os.listdir("./ExportedTextures")
+    skin_to_weapon = {}
 
-    # create a list of all texture file names
-    file_names = [file for file in files]
+    # gather collection list for weapon association
+    for item_set in items_json["item_sets"].values():
+        for item in item_set["items"].keys():
+            # seperate the identifier from the weapon name
+            item = item.split("]")
 
-    # gather list of skins
+            # get identifier
+            skin_identifier = item[0].lstrip("[")
+
+            try:
+                # get weapon name
+                weapon_name = item[1]
+            except IndexError:
+                # invalid skin name, skip this collection
+                continue
+
+            if skin_identifier not in skin_to_weapon.keys():
+                skin_to_weapon[skin_identifier] = get_weapon(weapon_name.split("weapon_")[-1])
+
+    # populate skin names
     paint_kits = items_json["paint_kits"]
     for skin_id in paint_kits.keys():
         # gather skin data
@@ -95,18 +136,6 @@ def match_textures(items_json: dict, translations_json: dict, texture_folder: st
         # get data name
         data_name = skin["name"]
 
-        # check if tag is already in DB
-        cursor = db.cursor()
-        data = cursor.execute("SELECT skin_texture_file FROM skins WHERE skin_data_name = ?", (data_name, )).fetchone()
-        cursor.close()
-
-        # skip items that exist in the DB and remove their textures
-        if data is not None and len(data) > 0:
-            for texture in data:
-                try: file_names.remove(texture)
-                except ValueError: pass
-            continue
-
         # get internal data tag name
         data_tag = skin["description_tag"].lstrip("#").lower()
 
@@ -117,92 +146,75 @@ def match_textures(items_json: dict, translations_json: dict, texture_folder: st
         # get tag name
         tag_name = translations_json[data_tag]
 
-        # create valid textures array
-        valid = []
+        # update in db
+        cursor = db.cursor()
+        cursor.execute("UPDATE skins SET skin_tag_name = ? WHERE skin_data_name = ?;", (tag_name, data_name))
 
-        # get all parts of the tag
-        for part in data_name.lower().split("_"):
-            # make sure part is not weapon name and part len > 2
-            if classify_weapon(part) is None and len(part) > 2:
-                # loop through all file names
-                for path in file_names:
-                    # check to see if parts match
-                    if part in path:
-                        # check if path is already valid
-                        if path not in valid:
-                            # add path to valid
-                            valid.append(path)
+    # gather list of skins
+    cursor = db.cursor()
+    skin_data_names = db.execute("SELECT skin_data_name FROM skins;").fetchall()
+    cursor.close()
 
-                            # make sure the temp folder exists
-                            if not os.path.exists("./temp"):
-                                os.mkdir("./temp")
+    # populate texture, rarity, and weapon type information
+    for data_name in skin_data_names:
+        data_name = data_name[0]
 
-                            # copy texture file over
-                            shutil.copy(f"./ExportedTextures/{path}", f"./temp/{len(valid)}.png")
-                            break
+        # check if skin already has texture in DB
+        cursor = db.cursor()
+        data = cursor.execute("SELECT skin_texture_file, skin_vmat_data FROM skins WHERE skin_data_name = ?",
+                              (data_name,)).fetchone()
+        cursor.close()
 
-        # set chosen texture
-        chosen_texture = None
+        # skip items that exist in the DB
+        if data is None:
+            continue
+        elif data[0] is not None:
+            continue
 
-        # check valid length
-        match len(valid):
-            case 0:
-                # invalid length
-                print(f"\t > No valid textures for {tag_name} ({data_name}).")
-            case 1:
-                # valid length, remove from valid
-                chosen_texture = valid.pop(0)
-            case _:
-                # have user choose one of the valid textures
-                print(f"\t > More than one valid texture found for {tag_name} ({data_name}).")
+        # get vmat data
+        vmat_data = json.loads(data[1])
 
-                # create a string listing out all the valid texture files
-                textures_string = "\n\t\t > ".join(f"{x + 1} {valid[x]}" for x in range(len(valid)))
+        # get texture file from vmat data
+        if vmat_data is not None and vmat_data != {}:
+            # set chosen texture
+            try:
+                texture_name = vmat_data["Layer0"]["compiled textures"]["g_tpattern"].split("/")[-1]
+            except KeyError:
+                try:
+                    texture_name = vmat_data["Layer0"]["compiled textures"]["g_tcolor"].split("/")[-1]
+                except KeyError:
+                    texture_name = None
+        else:
+            texture_name = None
 
-                # error-handling loop - ensures a chosen answer is valid
-                while True:
-                    try:
-                        # get chosen texture
-                        chosen_texture = int(
-                            input(f"\t > Please choose a texture (-1 for None):\n\t\t > {textures_string}\n\t\t > "))
+        # replace .vtex with .png and ensure file exists
+        if texture_name is not None:
+            texture_name = texture_name.replace(".vtex",".png")
 
-                        # ensure texture hasn't been set to None
-                        if chosen_texture == -1:
-                            chosen_texture = None
-                        else:
-                            chosen_texture = valid.pop(chosen_texture - 1)
-                    except IndexError:
-                        continue
+            if not os.path.exists(os.path.join(texture_folder, texture_name)):
+                print(f"\t > Unable to find {texture_name}")
 
-                    # wipe valid list
-                    valid = []
-                    break
+        # get skin rarity
+        rarity = get_rarity(items_json['paint_kits_rarity'][data_name])
 
-        # remove temp folder
-        if os.path.exists("./temp"):
-            shutil.rmtree("./temp")
+        # get weapon type
+        try:
+            weapon_type = skin_to_weapon[data_name].value
+        except KeyError:
+            weapon_type = WeaponToInt.KNIFE.value
 
-        # make sure there is a chosen texture
-        if chosen_texture:
-            # remove this texture from the list
-            file_names.remove(chosen_texture)
+        # create cursor
+        cursor = db.cursor()
 
-            # create cursor
-            cursor = db.cursor()
+        # save to DB
+        cursor.execute("""
+                    UPDATE skins SET
+                    skin_weapon_type = ?, skin_texture_file = ?, skin_rarity = ?
+                    WHERE skin_data_name = ?;
+                    """, (weapon_type, texture_name, rarity.value, data_name))
 
-            # save to DB
-            cursor.execute("""
-                INSERT INTO skins
-                (skin_data_name, skin_tag_name, skin_weapon_type, skin_texture_file)
-                VALUES (?,?,?,?);
-                """, (data_name, tag_name, 0, chosen_texture))
+        # close cursor
+        cursor.close()
 
-            # close cursor
-            cursor.close()
-
-            # commit to DB
-            db.commit()
-
-
-def gather_rarities() -> None:
-    pass
+        # commit to DB
+        db.commit()
