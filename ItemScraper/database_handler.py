@@ -12,11 +12,14 @@ Uses data gathered from the source file reader to compile a list of skin names a
 """
 
 import os
+import time
 import json
-import shutil
+import random
 import sqlite3
+import requests as req
+from urllib.parse import quote
 
-from weapon_classifiers import get_weapon, get_rarity, WeaponToInt
+from weapon_classifiers import get_weapon, get_rarity, WeaponToInt, get_valid_wears, WeaponIntToStr
 
 
 def build_db(file_path: str, should_wipe: bool = False) -> sqlite3.Connection:
@@ -51,6 +54,8 @@ def build_db(file_path: str, should_wipe: bool = False) -> sqlite3.Connection:
             skin_weapon_type TEXT,
             skin_texture_file TEXT,
             skin_rarity INTEGER,
+            min_wear FLOAT,
+            max_wear FLOAT,
             skin_vmat_data TEXT DEFAULT "{}",
             skin_price_data TEXT DEFAULT "{}"
         );
@@ -92,7 +97,7 @@ def build_db(file_path: str, should_wipe: bool = False) -> sqlite3.Connection:
 
 def get_skin_data(items_json: dict, translations_json: dict, texture_folder: str, db: sqlite3.Connection) -> None:
     """
-    Gathers texture data, tag names, rarities, and weapon types for all skins and adds it to the DB
+    Gathers texture data, tag names, rarities, min/max wears, and weapon types for all skins and adds it to the DB
 
     :param items_json: Dictionary object containing the contents of items_game
     :param translations_json: Dictionary object containing the contents of csgo_english
@@ -134,7 +139,19 @@ def get_skin_data(items_json: dict, translations_json: dict, texture_folder: str
             continue
 
         # get data name
-        data_name = skin["name"]
+        data_name = skin["name"].lower()
+
+        # get wear values
+        min_wear = 0
+        max_wear = 1
+        try:
+            min_wear = skin["wear_remap_min"]
+            max_wear = skin["wear_remap_max"]
+        except KeyError:
+            try:
+                min_wear = skin["wear_default"]
+            except KeyError:
+                pass
 
         # get internal data tag name
         data_tag = skin["description_tag"].lstrip("#").lower()
@@ -148,7 +165,8 @@ def get_skin_data(items_json: dict, translations_json: dict, texture_folder: str
 
         # update in db
         cursor = db.cursor()
-        cursor.execute("UPDATE skins SET skin_tag_name = ? WHERE skin_data_name = ?;", (tag_name, data_name))
+        cursor.execute("UPDATE skins SET skin_tag_name = ?, min_wear = ?, max_wear = ? WHERE skin_data_name = ?;",
+                       (tag_name, min_wear, max_wear, data_name))
 
     # gather list of skins
     cursor = db.cursor()
@@ -189,7 +207,7 @@ def get_skin_data(items_json: dict, translations_json: dict, texture_folder: str
 
         # replace .vtex with .png and ensure file exists
         if texture_name is not None:
-            texture_name = texture_name.replace(".vtex",".png")
+            texture_name = texture_name.replace(".vtex", ".png")
 
             if not os.path.exists(os.path.join(texture_folder, texture_name)):
                 print(f"\t > Unable to find {texture_name}")
@@ -217,4 +235,63 @@ def get_skin_data(items_json: dict, translations_json: dict, texture_folder: str
         cursor.close()
 
         # commit to DB
+        db.commit()
+
+
+def get_prices(db: sqlite3.Connection) -> None:
+    """
+    Sends a request to the Steam market webpages to gather price history, up to 1/1/2024, then stores it in the database
+    :param db: Database object with stored skin data names
+    """
+
+    # set Steam request URL
+    market_root = "https://steamcommunity.com/market/pricehistory/?country=US&currency=3&appid=730&market_hash_name="
+
+    # set cookies
+    cookie_jar = {
+        "sessionid": input("Steam session ID: "),
+        "steamLoginSecure": input("Steam Login Token: ")
+    }
+
+    # get skin data names and price data from DB
+    cursor = db.cursor()
+    data = cursor.execute(
+        "SELECT min_wear, max_wear, skin_tag_name, skin_data_name, skin_weapon_type FROM skins WHERE skin_price_data = \"{}\"").fetchall()
+    cursor.close()
+
+    for skin in range(len(data)):
+        # set data values
+        min_wear, max_wear, skin_tag_name, skin_data_name, skin_weapon_type = data[skin]
+
+        print(f"\t > Handling {skin + 1}/{len(data)} (~{(len(data) - (skin + 1)) * 15} seconds)")
+
+        # sleep for 10-15 seconds to avoid rate limit
+        time.sleep(random.randrange(10, 15))
+
+        # get valid wears lists
+        valid_wears = get_valid_wears(float(min_wear), float(max_wear))
+
+        # skip knives
+        if int(skin_weapon_type) == 35:
+            continue
+
+        # get weapon string
+        weapon = WeaponIntToStr[int(skin_weapon_type)]
+
+        # create market hash name
+        hash_name = f"{weapon} | {skin_tag_name} ({valid_wears[0].value})"
+
+        # send get request
+        r = req.get(url=market_root + quote(hash_name), cookies=cookie_jar)
+
+        # parse returned JSON
+        json_data = r.json()
+
+        # save JSON to database
+        cursor = db.cursor()
+        cursor.execute("UPDATE skins SET skin_price_data = ? WHERE skin_data_name = ?",
+                       (json.dumps(json_data), skin_data_name))
+        cursor.close()
+
+        # commit to db
         db.commit()

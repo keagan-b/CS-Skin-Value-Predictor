@@ -13,8 +13,9 @@ Will then build that into a dataset that's compatible with Keras.
 """
 
 from source_file_reader import gather_data, decompile_textures, decompile_vmats
-from database_handler import build_db, get_skin_data
+from database_handler import build_db, get_skin_data, get_prices
 from dataset_builder import build_dataset
+from weapon_classifiers import get_valid_wears
 
 
 def main():
@@ -35,7 +36,7 @@ def main():
 
     print("Connecting to database...")
 
-    db = build_db("./Data/skins.db", True)
+    db = build_db("./Data/skins.db", False)
 
     print("Decompiling VMATs...")
 
@@ -47,9 +48,15 @@ def main():
     # decompile textures
     decompile_textures()
 
-    print("Matching textures...")
+    print("Gathering skin information...")
 
+    # get skin data for each skin with a valid VMAT file
     get_skin_data(items_game_json, english_translations_json, "./Textures", db)
+
+    print("Gathering price data...")
+
+    # send requests to steam API for price history
+    get_prices(db)
 
     print("Building dataset...")
 

@@ -116,7 +116,7 @@ def gather_data(input_path: str, output_path: str, skip: int = 0) -> dict:
                     current_key_set.append(groups[0].lower())
 
                     # create new key dictionary if we don't have one already
-                    if groups[0] not in current_level.keys():
+                    if groups[0].lower() not in current_level.keys():
                         current_level[groups[0].lower()] = {}
                 else:  # add key/value pair to current dictionary level
                     current_level[groups[0].lower()] = groups[1]
