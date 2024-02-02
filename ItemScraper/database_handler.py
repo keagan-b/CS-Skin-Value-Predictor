@@ -247,39 +247,36 @@ def get_prices(db: sqlite3.Connection) -> None:
     # set Steam request URL
     market_root = "https://steamcommunity.com/market/pricehistory/?country=US&currency=3&appid=730&market_hash_name="
 
+    # get skin data names and price data from DB, skip knives
+    cursor = db.cursor()
+    data = cursor.execute(
+        "SELECT min_wear, max_wear, skin_tag_name, skin_data_name, skin_weapon_type FROM skins WHERE skin_price_data = \"{}\" AND skin_weapon_type != 35").fetchall()
+    cursor.close()
+
+    # return if data is needed
+    if len(data) == 0:
+        return
+
     # set cookies
     cookie_jar = {
         "sessionid": input("Steam session ID: "),
         "steamLoginSecure": input("Steam Login Token: ")
     }
 
-    # get skin data names and price data from DB
-    cursor = db.cursor()
-    data = cursor.execute(
-        "SELECT min_wear, max_wear, skin_tag_name, skin_data_name, skin_weapon_type FROM skins WHERE skin_price_data = \"{}\"").fetchall()
-    cursor.close()
-
     for skin in range(len(data)):
         # set data values
         min_wear, max_wear, skin_tag_name, skin_data_name, skin_weapon_type = data[skin]
 
-        print(f"\t > Handling {skin + 1}/{len(data)} (~{(len(data) - (skin + 1)) * 15} seconds)")
-
-        # sleep for 10-15 seconds to avoid rate limit
-        time.sleep(random.randrange(10, 15))
+        print(f"\t > Handling {skin + 1}/{len(data)} (~{(len(data) - (skin + 1)) * 20} seconds)")
 
         # get valid wears lists
         valid_wears = get_valid_wears(float(min_wear), float(max_wear))
-
-        # skip knives
-        if int(skin_weapon_type) == 35:
-            continue
 
         # get weapon string
         weapon = WeaponIntToStr[int(skin_weapon_type)]
 
         # create market hash name
-        hash_name = f"{weapon} | {skin_tag_name} ({valid_wears[0].value})"
+        hash_name = f"{weapon} | {skin_tag_name.strip()} ({valid_wears[0].value})"
 
         # send get request
         r = req.get(url=market_root + quote(hash_name), cookies=cookie_jar)
@@ -295,3 +292,8 @@ def get_prices(db: sqlite3.Connection) -> None:
 
         # commit to db
         db.commit()
+
+        # check if we are on the last skin or not
+        if skin + 1 != len(data):
+            # sleep for 12-20 seconds to avoid rate limit
+            time.sleep(random.randrange(15, 20))

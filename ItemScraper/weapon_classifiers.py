@@ -51,6 +51,7 @@ class WeaponToInt(enum.Enum):
     M249 = 33
     NEGEV = 34
     KNIFE = 35
+    MP5SD = 36
 
 
 WeaponIntToStr = {
@@ -77,17 +78,18 @@ WeaponIntToStr = {
     21: "MP5",
     22: "FAMAS",
     23: "Galil AR",
-    24: "M4A1",
+    24: "M4A4",
     25: "M4A1-S",
     26: "AK-47",
-    27: "Aug",
+    27: "AUG",
     28: "SG 553",
     29: "SSG 08",
     30: "AWP",
     31: "SCAR-20",
     32: "G3SG1",
     33: "M249",
-    34: "Negev"
+    34: "Negev",
+    36: "MP5-SD"
 }
 
 
@@ -153,7 +155,7 @@ str_to_weapon = {
     "m249": WeaponToInt.M249,
     "negev": WeaponToInt.NEGEV,
     "revolver": WeaponToInt.R8,
-    "mp5sd": WeaponToInt.MP5,
+    "mp5sd": WeaponToInt.MP5SD,
 }
 
 
