@@ -15,6 +15,8 @@ import re
 import json
 import sqlite3
 import subprocess
+from keras.utils import load_img
+from keras.utils import save_img
 
 
 def gather_data(input_path: str, output_path: str, skip: int = 0) -> dict:
@@ -205,6 +207,10 @@ def decompile_textures() -> None:
 
                     # silently run command
                     subprocess.run(command, stdout=open(os.devnull, "wb"))
+
+                    # resize file to be 512x512
+                    img = load_img(f"../ItemScraper/Textures/{output_name}", color_mode="rgba", target_size=(512, 512))
+                    save_img(f"../ItemScraper/Textures/{output_name}", img)
 
 
 def get_level(dictionary: dict, arr: list) -> dict:

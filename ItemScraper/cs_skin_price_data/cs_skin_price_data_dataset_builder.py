@@ -22,18 +22,14 @@ class Builder(tfds.core.GeneratorBasedBuilder):
 
     def _info(self) -> tfds.core.DatasetInfo:
         """Returns the dataset metadata."""
-        # TODO(cs_skin_price_data): Specifies the tfds.core.DatasetInfo object
         return self.dataset_info_from_configs(
             features=tfds.features.FeaturesDict({
                 # These are the features of your dataset like images, labels ...
-                'texture': tfds.features.Image(shape=(1024, 1024, 4)),
+                'texture': tfds.features.Image(shape=(512, 512, 4)),
                 'price': tfds.features.Scalar(dtype=dtypes.float32),
-                'rarity': tfds.features.Scalar(dtype=dtypes.int32),
-                'weapon_type': tfds.features.Scalar(dtype=dtypes.int32)
+                'rarity': tfds.features.Scalar(dtype=dtypes.int16),
+                'weapon_type': tfds.features.Scalar(dtype=dtypes.int16)
             })
-            # If there's a common (input, target) tuple from the
-            # features, specify them here. They'll be used if
-            # `as_supervised=True` in `builder.as_dataset`.
         )
 
     def _split_generators(self, dl_manager: tfds.download.DownloadManager):
@@ -73,19 +69,19 @@ class Builder(tfds.core.GeneratorBasedBuilder):
             # parse JSON data
             prices = json.loads(skin[4])["prices"]
 
-            # get price of skin of Feb 1st, 2024, 12:00 AM
-            feb_1st_price = 0
+            # get price of skin of Jan 1st, 2024, 12:00 AM
+            price_to_use = 0
             for price in prices:
                 # check prices
-                if price[0] == "Feb 01 2024 00: +0":
+                if "Jan 01 2024" in price[0]:
                     # set parsed price
-                    feb_1st_price = price[1]
+                    price_to_use = float(price[1])
                     break
 
             # return example with skin_data_name as key
             yield skin[0], {
                 'texture': f"../Textures/{skin[2]}",
-                'price': float(feb_1st_price),
+                'price': price_to_use,
                 'rarity': int(skin[3]),
                 'weapon_type': int(skin[1])
             }
