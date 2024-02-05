@@ -201,23 +201,23 @@ def get_valid_wears(min_wear: float, max_wear: float) -> list[WearsToStr]:
     valid_wears = []
 
     # check Factory New
-    if min_wear <= 0.07 or 0.07 >= max_wear:
+    if min_wear < 0.07 or 0.07 >= max_wear:
         valid_wears.append(WearsToStr.FACTORYNEW)
 
     # check Minimal Wear
-    if min_wear <= 0.15 and (max_wear >= 0.15 or 0.07 <= max_wear):
+    if min_wear < 0.15 and (max_wear >= 0.15 or 0.07 <= max_wear):
         valid_wears.append(WearsToStr.MINWEAR)
 
     # check Field-Tested
-    if min_wear <= 0.38 and (max_wear >= 0.38 or 0.15 <= max_wear):
+    if min_wear < 0.38 and (max_wear >= 0.38 or 0.15 <= max_wear):
         valid_wears.append(WearsToStr.FIELDTESTED)
 
     # check Well-Worn
-    if min_wear <= 0.45 and (max_wear >= 0.45 or 0.38 <= max_wear):
+    if min_wear < 0.45 and (max_wear >= 0.45 or 0.38 <= max_wear):
         valid_wears.append(WearsToStr.WELLWORN)
 
     # check Battle-Scarred
-    if min_wear <= 1 and (max_wear >= 1 or 0.45 <= max_wear):
+    if min_wear < 1 and (max_wear >= 1 or 0.45 <= max_wear):
         valid_wears.append(WearsToStr.BATTLESCARRED)
 
     return valid_wears

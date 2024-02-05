@@ -3,5 +3,6 @@
 ItemScraper/Textures/
 ItemScraper/temp/
 ItemScraper/TGAs/
-*/__pycache__/
+*/__pycache__/*
 /CSUnpacked/*
+/__pycache__/

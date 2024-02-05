@@ -170,7 +170,7 @@ def get_skin_data(items_json: dict, translations_json: dict, texture_folder: str
 
     # gather list of skins
     cursor = db.cursor()
-    skin_data_names = db.execute("SELECT skin_data_name FROM skins;").fetchall()
+    skin_data_names = db.execute("SELECT skin_data_name FROM skins WHERE skin_texture_file = NULL;").fetchall()
     cursor.close()
 
     # populate texture, rarity, and weapon type information
@@ -250,7 +250,7 @@ def get_prices(db: sqlite3.Connection) -> None:
     # get skin data names and price data from DB, skip knives
     cursor = db.cursor()
     data = cursor.execute(
-        "SELECT min_wear, max_wear, skin_tag_name, skin_data_name, skin_weapon_type FROM skins WHERE skin_price_data = \"{}\" AND skin_weapon_type != 35").fetchall()
+        "SELECT min_wear, max_wear, skin_tag_name, skin_data_name, skin_weapon_type FROM skins WHERE (skin_price_data = \"{}\" OR skin_price_data = \"[]\") AND skin_weapon_type != 35").fetchall()
     cursor.close()
 
     # return if data is needed
@@ -274,6 +274,22 @@ def get_prices(db: sqlite3.Connection) -> None:
 
         # get weapon string
         weapon = WeaponIntToStr[int(skin_weapon_type)]
+
+        # replace weird ASCII errors in tags:
+        to_replace = [
+            ("Ã¶", "ö"),
+            ("é¾çŽ‹", "龍王"),
+            ("å£±", "壱"),
+            ("å¼", "弐")
+        ]
+
+        # loop through ASCII errors
+        for old, new in to_replace:
+            skin_tag_name = skin_tag_name.replace(old, new)
+
+        # account for souvenir lab rats skin
+        if skin_tag_name == "Lab Rats":
+            weapon = "Souvenir " + weapon
 
         # create market hash name
         hash_name = f"{weapon} | {skin_tag_name.strip()} ({valid_wears[0].value})"

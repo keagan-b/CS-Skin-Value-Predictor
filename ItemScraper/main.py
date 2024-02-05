@@ -15,7 +15,6 @@ Will then build that into a dataset that's compatible with Keras.
 from source_file_reader import gather_data, decompile_textures, decompile_vmats
 from database_handler import build_db, get_skin_data, get_prices
 from dataset_builder import build_dataset
-from weapon_classifiers import get_valid_wears
 
 
 def main():
@@ -60,9 +59,10 @@ def main():
 
     print("Building dataset...")
 
-    # build_dataset(db)
+    # build dataset with TFDS
+    build_dataset()
 
-    print("Process complete.")
+    print("Dataset built.")
 
 
 main()
