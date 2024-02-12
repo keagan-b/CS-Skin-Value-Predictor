@@ -67,21 +67,58 @@ class Builder(tfds.core.GeneratorBasedBuilder):
         """Yields examples."""
         for skin in data:
             # parse JSON data
-            prices = json.loads(skin[4])["prices"]
+            price_data = json.loads(skin[4])["prices"]
 
-            # get price of skin of Jan 1st, 2024, 12:00 AM
-            price_to_use = 0
-            for price in prices:
+            prices = []
+
+            # gather all prices
+            for price in price_data:
                 # check prices
-                if "Jan 01 2024" in price[0]:
-                    # set parsed price
-                    price_to_use = float(price[1])
+                # if "Jan" in price[0] and "2024" in price[0]:
+                # add parsed price
+                prices.append(float(price[1]))
+
+            prices = sorted(prices)
+
+            # construct inter-quartile range
+            quarter_size = len(prices) // 4
+            q1 = prices[quarter_size * 1]
+            q2 = prices[quarter_size * 2]
+            q3 = prices[quarter_size * 3]
+            iqr = (q3 - q1) * 1.5
+
+            # add IQR to price data
+            final_prices = [
+                ("q1", q1),
+                ("q2", q2),
+                ("q3", q3),
+                ("avg", sum(prices) / len(prices))
+            ]
+
+            # get min
+            for price in prices:
+                # ensure price is not an outlier
+                if price < q1 - iqr:
+                    continue
+                else:
+                    final_prices.append(("min", price))
                     break
 
-            # return example with skin_data_name as key
-            yield skin[0], {
-                'texture': f"../Textures/{skin[2]}",
-                'price': price_to_use,
-                'rarity': int(skin[3]),
-                'weapon_type': int(skin[1])
-            }
+            # get max
+            for price in reversed(prices):
+                # ensure price is not an outlier
+                if price > q3 + iqr:
+                    continue
+                else:
+                    final_prices.append(("max", price))
+                    break
+
+            # construct dataset
+            for tag_name, value in final_prices:
+                # return example with skin_data_name as key
+                yield f"{skin[0]}_{tag_name}", {
+                    'texture': f"../Textures/{skin[2]}",
+                    'price': value,
+                    'rarity': int(skin[3]),
+                    'weapon_type': int(skin[1])
+                }
