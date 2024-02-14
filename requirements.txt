@@ -2,3 +2,4 @@ tensorflow==2.15.0
 keras
 tensorflow-datasets==4.9.4
 pillow==10.0.0
+matplotlib==3.8.2

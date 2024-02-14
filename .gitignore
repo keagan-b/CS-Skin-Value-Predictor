@@ -5,3 +5,4 @@ ItemScraper/TGAs/
 */__pycache__/*
 /CSUnpacked/*
 /__pycache__/
+ModelTrainer/cs_prediction.keras
