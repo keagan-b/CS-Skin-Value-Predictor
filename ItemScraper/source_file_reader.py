@@ -133,7 +133,7 @@ def gather_data(input_path: str, output_path: str, skip: int = 0) -> dict:
         return data
 
 
-def decompile_vmats(db:sqlite3.Connection, vmat_dir: str) -> None:
+def decompile_vmats(db:sqlite3.Connection, vmat_dir: str, should_commit=True) -> None:
     """
     Uses the ValveResourceFormat decompiler to extract a list of VMAT files and match them
     to their corresponding data names.
@@ -168,16 +168,22 @@ def decompile_vmats(db:sqlite3.Connection, vmat_dir: str) -> None:
             # process the extracted data and save it
             data = gather_data("./VMATs/temp.txt", f"./VMATs/{file_name}.txt")
 
-            # open cursor
-            cursor = db.cursor()
-            cursor.execute("""
-            INSERT INTO skins 
-            (skin_data_name, skin_vmat_data)
-            VALUES (?,?);
-            """, (file_name, json.dumps(data)))
-            cursor.close()
+            # if the db should be written to, write to it
+            if should_commit:
+                # open cursor
+                try:
+                    cursor = db.cursor()
+                    cursor.execute("""
+                    INSERT INTO skins 
+                    (skin_data_name, skin_vmat_data)
+                    VALUES (?,?);
+                    """, (file_name, json.dumps(data)))
+                    cursor.close()
 
-            db.commit()
+                    db.commit()
+                except sqlite3.IntegrityError:
+                    # ignore exceptions in the DB due to duplicated names
+                    pass
 
     # remove temp file
     if os.path.exists("./VMATs/temp.txt"):
