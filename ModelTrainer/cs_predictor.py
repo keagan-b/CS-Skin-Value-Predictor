@@ -43,9 +43,9 @@ def train_model():
     # -- create model --
 
     # set input layers
-    texture_input = keras.Input(shape=(512, 512, 4), name="texture")
-    weapon_input = keras.Input(batch_shape=(1,), dtype=dtypes.int32, name="weapon_type")
-    rarity_input = keras.Input(batch_shape=(1,), dtype=dtypes.int32, name="rarity")
+    texture_input = keras.Input(shape=(512, 512, 4), name="texture_input")
+    weapon_input = keras.Input(batch_shape=(1,), dtype=dtypes.int32, name="weapon_type_input")
+    rarity_input = keras.Input(batch_shape=(1,), dtype=dtypes.int32, name="rarity_input")
 
     # create layers
 
@@ -69,11 +69,11 @@ def train_model():
 
     norm = layers.Normalization()(flat)
 
-    dense_1 = layers.Dense(units=64)(norm)
+    dense_1 = layers.Dense(units=64, activation="softplus")(norm)
 
     drop_1 = layers.Dropout(rate=0.05)(dense_1)
 
-    dense_2 = layers.Dense(units=8, activation="relu")(drop_1)
+    dense_2 = layers.Dense(units=8, activation="leaky_relu")(drop_1)
 
     # reshape data for concat
     weapon_input_reshaped = layers.Reshape((-1,))(weapon_input)
@@ -90,7 +90,6 @@ def train_model():
     # MeanSquaredLogarithmicError
 
     # Adadelta is good :)
-
 
     model.compile(
         loss=keras.losses.MeanSquaredError(),
@@ -114,12 +113,14 @@ def train_model():
     model.save("cs_prediction.keras")
 
 
-def predict(data_name: str, model):
+def predict_from_db(data_name: str, model):
     # connect to DB to get statistics
     db = sqlite3.connect("../ItemScraper/Data/skins.db")
 
     cursor = db.cursor()
-    data = cursor.execute("SELECT skin_price_data, skin_weapon_type, skin_rarity, skin_texture_file FROM skins WHERE skin_data_name = ?", (data_name,)).fetchone()
+    data = cursor.execute(
+        "SELECT skin_price_data, skin_weapon_type, skin_rarity, skin_texture_file FROM skins WHERE skin_data_name = ?",
+        (data_name,)).fetchone()
     cursor.close()
 
     weapon_int = int(data[1])
@@ -172,7 +173,6 @@ def predict(data_name: str, model):
             print(f"Min: {price}")
             break
 
-
     # get max
     for price in reversed(prices):
         # ensure price is not an outlier
@@ -182,6 +182,24 @@ def predict(data_name: str, model):
             print(f"Max: {price}")
             break
 
+    print(f"Prediction: {prediction[0][0]}")
+
+
+def predict_from_inputs(model):
+    file_path = input("Texture file path: ")
+    weapon_type = int(input("Weapon Type ID: "))
+    rarity_type = int(input("Rarity ID: "))
+
+    img = tf.convert_to_tensor(
+        keras.utils.img_to_array(
+            keras.utils.load_img(file_path, color_mode="rgba", target_size=(512, 512))
+        ).reshape((-1, 512, 512, 4))
+    )
+
+    weapon_input = tf.constant([weapon_type])
+    rarity_input = tf.constant([rarity_type])
+
+    prediction = model([img, weapon_input, rarity_input])
 
     print(f"Prediction: {prediction[0][0]}")
 
@@ -189,17 +207,21 @@ def predict(data_name: str, model):
 def load_model():
     print("Loading model...")
 
-    model = keras.models.load_model("cs_prediction.keras")
+    model = keras.models.load_model("cs_prediction.good.keras")
 
     print("Loaded model.")
 
     while True:
-        data_name = input("Please enter a skin data name, or -1 to exit.\n")
+        pred_type = input("1.) From database\n2.) Custom file\n3.) Exit")
 
-        if data_name == "-1":
-            break
-        else:
-            predict(data_name, model)
+        if pred_type == "1":
+            data_name = input("Please enter a skin data name\n")
+            predict_from_db(data_name, model)
+        elif pred_type == "2":
+            predict_from_inputs(model)
+        elif pred_type == "3":
+            return
+
 
 def main():
     while True:
