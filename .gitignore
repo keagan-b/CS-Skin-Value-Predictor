@@ -6,3 +6,4 @@ ItemScraper/TGAs/
 /CSUnpacked/*
 /__pycache__/
 ModelTrainer/cs_prediction.keras
+.idea/*
