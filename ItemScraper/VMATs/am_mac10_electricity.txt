@@ -5,7 +5,7 @@
         "g_bignoreweaponsizescale": "0",
         "g_npatterntexturehorizontalsampling": "0",
         "g_npatterntextureverticalsampling": "0",
-        "g_flcolorbrightness": "2.5",
+        "g_flcolorbrightness": "1.4",
         "g_flgrungetexcoordrotation": "0",
         "g_flgrungetexcoordscale": "1",
         "g_flpaintroughness": "0.4",
@@ -37,7 +37,7 @@
             "g_tgrunge": "materials/models/weapons/customization/shared/gun_grunge_psd_f3419fed.vtex",
             "g_tmasks": "materials/default/default_paintmask_tga_971c9ff1.vtex",
             "g_tmetalness": "materials/default/default_rough_tga_8aa56190.vtex",
-            "g_tpattern": "materials/models/weapons/customization/paints/anodized_multi/workshop/mac10_electricity_tga_3eb257c4.vtex",
+            "g_tpattern": "materials/models/weapons/customization/paints/anodized_multi/workshop/mac10_electricity_tga_5e39856.vtex",
             "g_twear": "materials/models/weapons/customization/shared/paint_wear_psd_a2abffd8.vtex"
         },
         "attributes": {

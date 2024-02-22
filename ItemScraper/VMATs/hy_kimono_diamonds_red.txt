@@ -37,7 +37,7 @@
             "g_tgrunge": "materials/models/weapons/customization/shared/gun_grunge_psd_f3419fed.vtex",
             "g_tmasks": "materials/default/default_paintmask_tga_971c9ff1.vtex",
             "g_tmetalness": "materials/default/default_rough_tga_8aa56190.vtex",
-            "g_tpattern": "materials/models/weapons/customization/paints/hydrographic/kimono_diamonds_psd_2e2d5c53.vtex",
+            "g_tpattern": "materials/models/weapons/customization/paints/hydrographic/kimono_diamonds_psd_e77e6e0b.vtex",
             "g_twear": "materials/models/weapons/customization/shared/paint_wear_psd_a2abffd8.vtex"
         },
         "attributes": {
