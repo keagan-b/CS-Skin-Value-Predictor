@@ -1,3 +1,16 @@
+"""
+
+CS2 Model Trainer and Predictor
+
+cs_predictor.py
+
+Developed by Keagan Bowman
+Copyright 2024
+
+Model layout and creation, as well as actual prediction using the model.
+
+"""
+
 import os
 
 os.environ["KERAS_BACKEND"] = "tensorflow"
@@ -17,6 +30,22 @@ print(f"Keras {keras.__version__}")
 print(f"Tensorflow {tf.__version__}")
 
 from keras import layers
+
+from ItemScraper.weapon_classifiers import WeaponIntToStr
+
+
+class BenchmarkResult:
+    def __init__(self, name, weapon_int, score, distance):
+        self.name = name
+        self.id = weapon_int
+        self.score = score
+        self.distance = distance
+
+    def __str__(self):
+        score_str = f"score: {self.score:.3f}%"
+        distance_str = f"distance: {self.distance:.3f}"
+
+        return f"{self.id}{' '*(3 - len(str(self.id)))}|  {self.name}{' ' * (16 - len(self.name))}|  {score_str}{' ' * (20 - len(score_str))}|  {distance_str}"
 
 
 def train_model():
@@ -97,11 +126,15 @@ def train_model():
     )
 
     # train model
-    history = model.fit(x_train, y_train, batch_size=64, epochs=64)
+    history = model.fit(x_train, y_train, batch_size=32, epochs=86)
 
     # test model
     model.evaluate(x_test, y_test, verbose=2)
 
+    # save model
+    model.save("cs_prediction.keras")
+
+    # create plot of model loss history
     plt.plot(history.history['loss'])
     plt.title('model loss')
     plt.ylabel('loss')
@@ -109,38 +142,38 @@ def train_model():
     plt.legend(['train', 'test'], loc='upper left')
     plt.show()
 
-    # save model
-    model.save("cs_prediction.keras")
-
 
 def predict_from_db(data_name: str, model):
     # connect to DB to get statistics
     db = sqlite3.connect("../ItemScraper/Data/skins.db")
 
+    # creator cursor & gather data
     cursor = db.cursor()
     data = cursor.execute(
         "SELECT skin_price_data, skin_weapon_type, skin_rarity, skin_texture_file FROM skins WHERE skin_data_name = ?",
         (data_name,)).fetchone()
     cursor.close()
 
+    # cast datapoints
     weapon_int = int(data[1])
     rarity_int = int(data[2])
     file_path = data[3]
 
+    # load price data as JSON
     price_data = json.loads(data[0])['prices']
 
+    # load and convert texture file
     img = tf.convert_to_tensor(
         keras.utils.img_to_array(
             keras.utils.load_img(f"../ItemScraper/Textures/{file_path}", color_mode="rgba", target_size=(512, 512))
         ).reshape((-1, 512, 512, 4))
     )
 
-    # weapon_int = int(input("Weapon Int: "))
-    # rarity_int = int(input("Rarity Int: "))
-
+    # cast weapon and rarity to tensorflow constatns
     weapon_input = tf.constant([weapon_int])
     rarity_input = tf.constant([rarity_int])
 
+    # get prediction
     prediction = model([img, weapon_input, rarity_input])
 
     prices = []
@@ -190,6 +223,10 @@ def predict_from_inputs(model):
     weapon_type = int(input("Weapon Type ID: "))
     rarity_type = int(input("Rarity ID: "))
 
+    if not os.path.exists(file_path):
+        print(f"File not found at {file_path}")
+        return
+
     img = tf.convert_to_tensor(
         keras.utils.img_to_array(
             keras.utils.load_img(file_path, color_mode="rgba", target_size=(512, 512))
@@ -201,18 +238,137 @@ def predict_from_inputs(model):
 
     prediction = model([img, weapon_input, rarity_input])
 
-    print(f"Prediction: {prediction[0][0]}")
+    print(f"Prediction: {abs(prediction[0][0])}")
+
+
+def benchmark(model):
+    print("Fetching data...")
+    # fetch all skins from database
+    db = sqlite3.connect('../ItemScraper/Data/skins.db')
+    cursor = db.cursor()
+    data = db.execute(
+        "SELECT skin_data_name, skin_weapon_type, skin_texture_file, skin_rarity, skin_price_data FROM skins WHERE skin_weapon_type != 35 AND skin_price_data != \"{}\"").fetchall()
+    cursor.close()
+    db.close()
+    print("Benchmarking...")
+
+    predictions = {}
+
+    # loop through all data
+    for data_name, weapon_type, texture_file, rarity, price_data in data:
+        # cast data
+        weapon_int = int(weapon_type)
+        rarity_int = int(rarity)
+        file_path = texture_file
+
+        # check if file path exists
+        if not os.path.exists(f"../ItemScraper/Textures/{file_path}"):
+            continue
+
+        # load price data
+        price_data = json.loads(price_data)['prices']
+
+        # load and convert image
+        img = tf.convert_to_tensor(
+            keras.utils.img_to_array(
+                keras.utils.load_img(f"../ItemScraper/Textures/{file_path}", color_mode="rgba", target_size=(512, 512))
+            ).reshape((-1, 512, 512, 4))
+        )
+
+        # cast weapon and rarity to tensorflow constants
+        weapon_input = tf.constant([weapon_int])
+        rarity_input = tf.constant([rarity_int])
+
+        # make prediction
+        prediction = abs(float(model([img, weapon_input, rarity_input])[0][0]))
+
+        # gather price data
+        prices = []
+        # gather all prices
+        for price in price_data:
+            # add parsed price
+            prices.append(float(price[1]))
+
+        # get price average
+        price_average = sum(prices) / len(prices)
+
+        # add predictions to prediction tracker
+        try:
+            predictions[weapon_int][0].append(prediction)
+            predictions[weapon_int][1].append(price_average)
+        except KeyError:
+            predictions[weapon_int] = [[prediction], [price_average]]
+
+    # create global prediction error percents
+    prediction_percents = []
+    prediction_distances = []
+    results = []
+
+    # loop through weapon types
+    for key in sorted(list(predictions.keys())):
+        current_percents = []
+        current_distance = []
+        # loop through all predictions
+        for i in range(len(predictions[key][0])):
+            # calculate percentage
+            percent = (predictions[key][0][i] / predictions[key][1][i]) * 100
+            distance = abs(predictions[key][0][i] - predictions[key][1][i])
+
+            # append to lists
+            prediction_percents.append(percent)
+            current_percents.append(percent)
+
+            prediction_distances.append(distance)
+            current_distance.append(distance)
+
+        # average percents and distances for this weapon type
+        s = sum(current_percents) / len(current_percents)
+        d = sum(current_distance) / len(current_distance)
+
+        # create benchmark result object
+        results.append(BenchmarkResult(WeaponIntToStr[key], key, s, d))
+
+    # get sorting order
+    while True:
+        sort_type = input("Please choose a sorting order for the results:\n1.) Name\n2.) ID\n3.) Score\n4.) Distance\n")
+
+        # check if chosen value is valid
+        if sort_type == "1":
+            results.sort(key=lambda x: x.name)
+            break
+        elif sort_type == "2":
+            results.sort(key=lambda x: x.id)
+            break
+        elif sort_type == "3":
+            results.sort(key=lambda x: x.score)
+            break
+        elif sort_type == "4":
+            results.sort(key=lambda x: x.distance)
+            break
+
+    # print table header
+    print(f"#  | id |  name{' ' * 12}|  score{' ' * 15}|  distance")
+    print("-" * 70)
+
+    # loop through and print results
+    for i in range(len(results)):
+        print(f"{i + 1}{' ' * (3 - len(str(i + 1)))}| {results[i]}")
+
+    # average for all percents
+    print(
+        f"Average score: {sum(prediction_percents) / len(prediction_percents):.3f}%, distance: {sum(prediction_distances) / len(prediction_distances):.3f}")
+    print("Benchmark completed.")
 
 
 def load_model():
     print("Loading model...")
 
-    model = keras.models.load_model("cs_prediction.good.keras")
+    model = keras.models.load_model("cs_prediction.keras")
 
     print("Loaded model.")
 
     while True:
-        pred_type = input("1.) From database\n2.) Custom file\n3.) Exit")
+        pred_type = input("1.) From database\n2.) Custom file\n3.) Benchmark\n4.) Exit\n")
 
         if pred_type == "1":
             data_name = input("Please enter a skin data name\n")
@@ -220,13 +376,15 @@ def load_model():
         elif pred_type == "2":
             predict_from_inputs(model)
         elif pred_type == "3":
+            benchmark(model)
+        elif pred_type == "3":
             return
 
 
 def main():
     while True:
         # get user input
-        x = input("Please select an option:\n1.) Train\n2.) Predict\n3.) Both\n")
+        x = input("Please select an option:\n1.) Train\n2.) Predict\n3.) Both\n4.) Exit\n")
 
         if x == "1":
             train_model()
@@ -235,6 +393,8 @@ def main():
         elif x == "3":
             train_model()
             load_model()
+        elif x == "4":
+            return
 
 
 if __name__ == "__main__":
