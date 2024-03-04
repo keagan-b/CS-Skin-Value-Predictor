@@ -101,7 +101,7 @@ class Builder(tfds.core.GeneratorBasedBuilder):
                 if price < q1 - iqr:
                     continue
                 else:
-                    final_prices.append(("min", price))
+                    # final_prices.append(("min", price))
                     break
 
             # get max
@@ -110,7 +110,7 @@ class Builder(tfds.core.GeneratorBasedBuilder):
                 if price > q3 + iqr:
                     continue
                 else:
-                    final_prices.append(("max", price))
+                    # final_prices.append(("max", price))
                     break
 
             # construct dataset
