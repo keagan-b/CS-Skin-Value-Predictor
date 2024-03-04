@@ -47,12 +47,12 @@ The dataset building is handled in [`cs_skin_price_data_dataset_builder.py`](./I
 ### Model
 The model is a regression model with CNN layers for pattern recognition and analysis. A CNN layer takes in the texture data, passes to a maxing pool, before passing a second CNN layer and maxing pool. Data is eventually flattened, normalized, and combined with the rarity and weapon identifier, before being extracted for output.
 
-![model.png](...)
+![model diagram](model.png)
 
 ### Predictions
 The current iteration of the model results in the following predictions for price. The scatterplot below shows the difference between the average price of the skin (taken from the market) and the predicted price of the skin (taken from the model).
 
-![predictions.png](...)
+![skin prediction scatterplot](price-predictions.svg)
 
 As one may be able to notice, higher price skins tend to have a higher accuracy rating, while lower price skins have a much higher variability. Typically, incorrect predictions tend to be float above trend line, meaning they have a lower predicted price compared to the actual average.    
 
