@@ -42,10 +42,10 @@ class BenchmarkResult:
         self.distance = distance
 
     def __str__(self):
-        score_str = f"score: {self.score:.3f}%"
-        distance_str = f"distance: {self.distance:.3f}"
+        score_str = f"{self.score:.3f}%"
+        distance_str = f"{self.distance:.3f}"
 
-        return f"{self.id}{' '*(3 - len(str(self.id)))}|  {self.name}{' ' * (16 - len(self.name))}|  {score_str}{' ' * (20 - len(score_str))}|  {distance_str}"
+        return f"{self.id}{' '*(3 - len(str(self.id)))}|  {self.name}{' ' * (16 - len(self.name))}|  {score_str}{' ' * (13 - len(score_str))}|  {distance_str}"
 
 
 def train_model():
@@ -126,7 +126,7 @@ def train_model():
     )
 
     # train model
-    history = model.fit(x_train, y_train, batch_size=32, epochs=86)
+    history = model.fit(x_train, y_train, batch_size=32, epochs=64)
 
     # test model
     model.evaluate(x_test, y_test, verbose=2)
@@ -247,15 +247,18 @@ def benchmark(model):
     db = sqlite3.connect('../ItemScraper/Data/skins.db')
     cursor = db.cursor()
     data = db.execute(
-        "SELECT skin_data_name, skin_weapon_type, skin_texture_file, skin_rarity, skin_price_data FROM skins WHERE skin_weapon_type != 35 AND skin_price_data != \"{}\"").fetchall()
+        "SELECT skin_data_name, skin_tag_name, skin_weapon_type, skin_texture_file, skin_rarity, skin_price_data FROM skins WHERE skin_weapon_type != 35 AND skin_price_data != \"{}\"").fetchall()
     cursor.close()
     db.close()
     print("Benchmarking...")
 
     predictions = {}
 
+    # prediction csv array
+    prediction_csv = []
+
     # loop through all data
-    for data_name, weapon_type, texture_file, rarity, price_data in data:
+    for data_name, tag_name, weapon_type, texture_file, rarity, price_data in data:
         # cast data
         weapon_int = int(weapon_type)
         rarity_int = int(rarity)
@@ -296,6 +299,9 @@ def benchmark(model):
         try:
             predictions[weapon_int][0].append(prediction)
             predictions[weapon_int][1].append(price_average)
+
+            prediction_csv.append((weapon_int, data_name, tag_name, prediction, price_average))
+
         except KeyError:
             predictions[weapon_int] = [[prediction], [price_average]]
 
@@ -347,8 +353,8 @@ def benchmark(model):
             break
 
     # print table header
-    print(f"#  | id |  name{' ' * 12}|  score{' ' * 15}|  distance")
-    print("-" * 70)
+    print(f"#  | id |  name{' ' * 12}|  score{' ' * 8}|  distance")
+    print("-" * 52)
 
     # loop through and print results
     for i in range(len(results)):
@@ -357,6 +363,28 @@ def benchmark(model):
     # average for all percents
     print(
         f"Average score: {sum(prediction_percents) / len(prediction_percents):.3f}%, distance: {sum(prediction_distances) / len(prediction_distances):.3f}")
+
+    # format results for CSV
+    csv_str = ["Weapon ID,Name,Distance,Score"]
+    for result in results:
+        result_str = f"{result.id},{result.name},${result.distance},{result.score}%"
+        csv_str.append(result_str)
+
+    # handle individual skin prices
+    csv_str.append(",\n,\nWeapon ID,Weapon Name,Skin Name,Prediction,Average,Distance,Score")
+    for weapon_int, data_name, tag_name, prediction, average in prediction_csv:
+        # assemble string for results
+        result_str = f"{weapon_int},{WeaponIntToStr[weapon_int]},{tag_name},${prediction},${average},${abs(prediction - average)},{(prediction / average) * 100}%"
+        csv_str.append(result_str)
+
+    csv_str = "\n".join(csv_str)
+
+    # save results to CSV
+    print("Saving as CSV...")
+    with open("benchmark.csv", "w") as f:
+        f.write(csv_str)
+        f.close()
+    print("Benchmark results saved.")
     print("Benchmark completed.")
 
 
@@ -377,7 +405,7 @@ def load_model():
             predict_from_inputs(model)
         elif pred_type == "3":
             benchmark(model)
-        elif pred_type == "3":
+        elif pred_type == "4":
             return
 
 
