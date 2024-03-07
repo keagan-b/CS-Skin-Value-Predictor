@@ -1,6 +1,6 @@
 # Counter Strike Skin Value Predictor
 
-Uses a CNN regression model written with Keras in Python 3 to attempt to predict the price of a skin on the Steam Community Market.
+Uses a CNN regression model written with Keras in Python 3 to attempt to predict the price of a Counter Strike 2 skin on the Steam Community Market.
 
 ---
 ### About
@@ -52,9 +52,17 @@ The model is a regression model with CNN layers for pattern recognition and anal
 ### Predictions
 The current iteration of the model results in the following predictions for price. The scatterplot below shows the difference between the average price of the skin (taken from the market) and the predicted price of the skin (taken from the model).
 
-![skin prediction scatterplot](price-predictions.svg)
+![individual skin prediction scatterplot](individual.svg)
 
-As one may be able to notice, higher price skins tend to have a higher accuracy rating, while lower price skins have a much higher variability. Typically, incorrect predictions tend to be float above trend line, meaning they have a lower predicted price compared to the actual average.    
+In the above graph, the red line is the trendline for actual predictions, while the black line is the true value of the skins. The black line represents a near 100% accuracy in a prediction. 
+
+As one may be able to notice, higher price skins tend to have a higher accuracy rating, while lower price skins have a much higher variability. Typically, incorrect predictions tend to be float above trend line, meaning they have a lower predicted price compared to the actual average.
+
+![grouped skin prediction scatterplot](grouped.svg)
+
+The second graph is the data for each weapon type. For example, a datapoint may represent the average prediction value and the average real value of all M4A1-S skins. 
+
+Generally, the grouped versions of the graph appear to show that the predictions are less accurate overall, and the trend line varies more than the individual predictions. This may mean that the overall accuracy of the model is not great, and the large number of predictions given for the individual prices simply cause the accuracy to appear to normalize.  
 
 ---
 
